@@ -26,25 +26,18 @@ def test_model_for_sdr_images(input_sdr, model, number_of_images, output_dir):
 if __name__== "__main__":
 
     parser = argparse.ArgumentParser()
-    
     parser.add_argument('-ihdr', '--input_hdr', action='store', dest='input_hdr', default='./data_hdr/' ,
-                    help='Path for input HDR images')
-                    
+                    help='Path for input HDR images')                    
     parser.add_argument('-isdr', '--input_sdr', action='store', dest='input_sdr', default='./data_sdr/' ,
-                    help='Path for input SDR images')
-                    
+                    help='Path for input SDR images')                    
     parser.add_argument('-o', '--output_dir', action='store', dest='output_dir', default='./output/' ,
-                    help='Path for Output images')
-    
+                    help='Path for Output images')    
     parser.add_argument('-m', '--model_dir', action='store', dest='model_dir', default='./model/gen_model3000.h5' ,
-                    help='Path for model')
-                    
+                    help='Path for model')                    
     parser.add_argument('-n', '--number_of_images', action='store', dest='number_of_images', default=25 ,
-                    help='Number of Images', type=int)
-                    
+                    help='Number of Images', type=int)                    
     parser.add_argument('-t', '--test_type', action='store', dest='test_type', default='test_model',
                     help='Option to test model output or to test low resolution image')
-    
     values = parser.parse_args()
     
     loss = VGG_LOSS(image_shape)  
