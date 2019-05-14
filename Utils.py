@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-#title           :Utils.py
-#description     :Have helper functions to process images and plot images
-#author          :Deepak Birla
-#date            :2018/10/30
-#usage           :imported in other files
-#python_version  :3.5.4
-
 from keras.layers import Lambda
 import tensorflow as tf
 from skimage import data, io, filters
@@ -31,29 +23,23 @@ def SubpixelConv2D(input_shape, scale=4):
         
     return Lambda(subpixel, output_shape=subpixel_shape)
     
-# Takes list of images and provide HR images in form of numpy array
-def hr_images(images):
-    images_hr = array(images)
-    return images_hr
+# Takes list of images and provide HDR images in form of numpy array
+def hdr_images(images):
+    images_hdr = array(images)
+    return images_hdr
 
-# Takes list of images and provide LR images in form of numpy array
-def lr_images(images_real , downscale):
-    
-    images = []
-    for img in  range(len(images_real)):
-        images.append(imresize(images_real[img], [images_real[img].shape[0]//downscale,images_real[img].shape[1]//downscale], interp='bicubic', mode=None))
-    images_lr = array(images)
-    return images_lr
+# Takes list of images and provide SDR images in form of numpy array
+def sdr_images(images):
+    images_sdr = array(images)
+    return images_sdr
     
 def normalize(input_data):
-
     return (input_data.astype(np.float32) - 127.5)/127.5 
     
 def denormalize(input_data):
     input_data = (input_data + 1) * 127.5
     return input_data.astype(np.uint8)
-   
- 
+
 def load_path(path):
     directories = []
     if os.path.isdir(path):
@@ -79,14 +65,11 @@ def load_data_from_dirs(dirs, ext):
     return files     
 
 def load_data(directory, ext):
-
     files = load_data_from_dirs(load_path(directory), ext)
     return files
     
 def load_training_data(directory, ext, number_of_images = 1000, train_test_ratio = 0.8):
-
-    number_of_train_images = int(number_of_images * train_test_ratio)
-    
+    number_of_train_images = int(number_of_images * train_test_ratio)   
     files = load_data_from_dirs(load_path(directory), ext)
     
     if len(files) < number_of_images:
@@ -103,23 +86,22 @@ def load_training_data(directory, ext, number_of_images = 1000, train_test_ratio
     x_train = files[:number_of_train_images]
     x_test = files[number_of_train_images:number_of_images]
     
-    x_train_hr = hr_images(x_train)
-    x_train_hr = normalize(x_train_hr)
+    x_train_hdr = hdr_images(x_train)
+    x_train_hdr = normalize(x_train_hdr)
     
-    x_train_lr = lr_images(x_train, 4)
-    x_train_lr = normalize(x_train_lr)
+    x_train_sdr = sdr_images(x_train)
+    x_train_sdr = normalize(x_train_sdr)
     
-    x_test_hr = hr_images(x_test)
-    x_test_hr = normalize(x_test_hr)
+    x_test_hdr = hdr_images(x_test)
+    x_test_hdr = normalize(x_test_hdr)
     
-    x_test_lr = lr_images(x_test, 4)
-    x_test_lr = normalize(x_test_lr)
+    x_test_sdr = sdr_images(x_test)
+    x_test_sdr = normalize(x_test_sdr)
     
-    return x_train_lr, x_train_hr, x_test_lr, x_test_hr
+    return x_train_sdr, x_train_hdr, x_test_sdr, x_test_hdr
 
 
 def load_test_data_for_model(directory, ext, number_of_images = 100):
-
     files = load_data_from_dirs(load_path(directory), ext)
     
     if len(files) < number_of_images:
@@ -127,16 +109,15 @@ def load_test_data_for_model(directory, ext, number_of_images = 100):
         print("Please reduce number of images to %d" % len(files))
         sys.exit()
         
-    x_test_hr = hr_images(files)
-    x_test_hr = normalize(x_test_hr)
+    x_test_hdr = hdr_images(files)
+    x_test_hdr = normalize(x_test_hdr)
     
-    x_test_lr = lr_images(files, 4)
-    x_test_lr = normalize(x_test_lr)
+    x_test_sdr = sdr_images(files)
+    x_test_sdr = normalize(x_test_sdr)
     
-    return x_test_lr, x_test_hr
+    return x_test_sdr, x_test_hdr
     
 def load_test_data(directory, ext, number_of_images = 100):
-
     files = load_data_from_dirs(load_path(directory), ext)
     
     if len(files) < number_of_images:
@@ -144,28 +125,27 @@ def load_test_data(directory, ext, number_of_images = 100):
         print("Please reduce number of images to %d" % len(files))
         sys.exit()
         
-    x_test_lr = lr_images(files, 4)
-    x_test_lr = normalize(x_test_lr)
+    x_test_sdr = sdr_images(files)
+    x_test_sdr = normalize(x_test_sdr)
     
-    return x_test_lr
+    return x_test_sdr
     
-# While training save generated image(in form LR, SR, HR)
+# While training save generated image(in form SDR, gen_HDR, HDR)
 # Save only one image as sample  
-def plot_generated_images(output_dir, epoch, generator, x_test_hr, x_test_lr , dim=(1, 3), figsize=(15, 5)):
-    
-    examples = x_test_hr.shape[0]
+def plot_generated_images(output_dir, epoch, generator, x_test_hdr, x_test_sdr , dim=(1, 3), figsize=(15, 5)):
+    examples = x_test_hdr.shape[0]
     print(examples)
     value = randint(0, examples)
-    image_batch_hr = denormalize(x_test_hr)
-    image_batch_lr = x_test_lr
-    gen_img = generator.predict(image_batch_lr)
+    image_batch_hdr = denormalize(x_test_hdr)
+    image_batch_sdr = x_test_sdr
+    gen_img = generator.predict(image_batch_sdr)
     generated_image = denormalize(gen_img)
-    image_batch_lr = denormalize(image_batch_lr)
+    image_batch_sdr = denormalize(image_batch_sdr)
     
     plt.figure(figsize=figsize)
     
     plt.subplot(dim[0], dim[1], 1)
-    plt.imshow(image_batch_lr[value], interpolation='nearest')
+    plt.imshow(image_batch_sdr[value], interpolation='nearest')
     plt.axis('off')
         
     plt.subplot(dim[0], dim[1], 2)
@@ -173,7 +153,7 @@ def plot_generated_images(output_dir, epoch, generator, x_test_hr, x_test_lr , d
     plt.axis('off')
     
     plt.subplot(dim[0], dim[1], 3)
-    plt.imshow(image_batch_hr[value], interpolation='nearest')
+    plt.imshow(image_batch_hdr[value], interpolation='nearest')
     plt.axis('off')
     
     plt.tight_layout()
@@ -181,23 +161,22 @@ def plot_generated_images(output_dir, epoch, generator, x_test_hr, x_test_lr , d
     
     #plt.show()
     
-# Plots and save generated images(in form LR, SR, HR) from model to test the model 
+# Plots and save generated images(in form SDR, gen_HDR, HDR) from model to test the model 
 # Save output for all images given for testing  
-def plot_test_generated_images_for_model(output_dir, generator, x_test_hr, x_test_lr , dim=(1, 3), figsize=(15, 5)):
-    
-    examples = x_test_hr.shape[0]
-    image_batch_hr = denormalize(x_test_hr)
-    image_batch_lr = x_test_lr
-    gen_img = generator.predict(image_batch_lr)
+def plot_test_generated_images_for_model(output_dir, generator, x_test_hdr, x_test_sdr , dim=(1, 3), figsize=(15, 5)):
+    examples = x_test_hdr.shape[0]
+    image_batch_hdr = denormalize(x_test_hdr)
+    image_batch_sdr = x_test_sdr
+    gen_img = generator.predict(image_batch_sdr)
     generated_image = denormalize(gen_img)
-    image_batch_lr = denormalize(image_batch_lr)
+    image_batch_sdr = denormalize(image_batch_sdr)
     
     for index in range(examples):
     
         plt.figure(figsize=figsize)
     
         plt.subplot(dim[0], dim[1], 1)
-        plt.imshow(image_batch_lr[index], interpolation='nearest')
+        plt.imshow(image_batch_sdr[index], interpolation='nearest')
         plt.axis('off')
         
         plt.subplot(dim[0], dim[1], 2)
@@ -205,7 +184,7 @@ def plot_test_generated_images_for_model(output_dir, generator, x_test_hr, x_tes
         plt.axis('off')
     
         plt.subplot(dim[0], dim[1], 3)
-        plt.imshow(image_batch_hr[index], interpolation='nearest')
+        plt.imshow(image_batch_hdr[index], interpolation='nearest')
         plt.axis('off')
     
         plt.tight_layout()
@@ -213,12 +192,12 @@ def plot_test_generated_images_for_model(output_dir, generator, x_test_hr, x_tes
     
         #plt.show()
 
-# Takes LR images and save respective HR images
-def plot_test_generated_images(output_dir, generator, x_test_lr, figsize=(5, 5)):
+# Takes SDR images and save respective HDR images
+def plot_test_generated_images(output_dir, generator, x_test_sdr, figsize=(5, 5)):
     
-    examples = x_test_lr.shape[0]
-    image_batch_lr = denormalize(x_test_lr)
-    gen_img = generator.predict(image_batch_lr)
+    examples = x_test_sdr.shape[0]
+    image_batch_sdr = denormalize(x_test_sdr)
+    gen_img = generator.predict(image_batch_sdr)
     generated_image = denormalize(gen_img)
     
     for index in range(examples):
@@ -232,8 +211,3 @@ def plot_test_generated_images(output_dir, generator, x_test_lr, figsize=(5, 5))
         plt.savefig(output_dir + 'high_res_result_image_%d.png' % index)
     
         #plt.show()
-
-
-
-
-
